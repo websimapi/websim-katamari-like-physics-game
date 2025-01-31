@@ -15,6 +15,7 @@ body {
 #game-canvas {
   width: 100%;
   height: 100%;
+  touch-action: none;
 }
 
 #stats {
@@ -28,4 +29,5 @@ body {
   padding: 10px;
   border-radius: 5px;
   pointer-events: none;
+  z-index: 1000;
 }
