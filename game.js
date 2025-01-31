@@ -1,5 +1,12 @@
+import * as THREE from 'three';
+
 class KatamariGame {
   constructor() {
+    if (!window.CANNON) {
+      console.error('CANNON.js not loaded!');
+      return;
+    }
+    
     this.init3D();
     this.initPhysics();
     this.setupWorld();
@@ -201,7 +208,19 @@ window.addEventListener('resize', () => {
   }
 });
 
-// Start the game when the page loads
+// Make sure the window is fully loaded and CANNON.js is available
 window.addEventListener('load', () => {
-  window.game = new KatamariGame();
+  if (window.CANNON) {
+    window.game = new KatamariGame();
+  } else {
+    console.error('Please wait for CANNON.js to load...');
+    // Retry after a short delay
+    setTimeout(() => {
+      if (window.CANNON) {
+        window.game = new KatamariGame();
+      } else {
+        console.error('Failed to load CANNON.js');
+      }
+    }, 1000);
+  }
 });
