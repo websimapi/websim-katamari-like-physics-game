@@ -1,12 +1,5 @@
-import * as THREE from 'three';
-
 class KatamariGame {
   constructor() {
-    if (!window.CANNON) {
-      console.error('CANNON.js not loaded!');
-      return;
-    }
-    
     this.init3D();
     this.initPhysics();
     this.setupWorld();
@@ -58,9 +51,27 @@ class KatamariGame {
     this.world.broadphase = new CANNON.NaiveBroadphase();
     this.world.solver.iterations = 10;
 
+    // Create materials
+    this.groundMaterial = new CANNON.Material('groundMaterial');
+    this.objectMaterial = new CANNON.Material('objectMaterial');
+
+    // Create contact material behavior
+    const contactMaterial = new CANNON.ContactMaterial(
+      this.groundMaterial,
+      this.objectMaterial,
+      {
+        friction: 0.5,
+        restitution: 0.3,
+      }
+    );
+    this.world.addContactMaterial(contactMaterial);
+
     // Ground physics body
     const groundShape = new CANNON.Plane();
-    const groundBody = new CANNON.Body({ mass: 0 });
+    const groundBody = new CANNON.Body({ 
+      mass: 0,
+      material: this.groundMaterial
+    });
     groundBody.addShape(groundShape);
     groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
     this.world.addBody(groundBody);
@@ -71,7 +82,9 @@ class KatamariGame {
       mass: 1,
       shape: new CANNON.Sphere(radius),
       position: new CANNON.Vec3(0, 5, 0),
-      material: new CANNON.Material()
+      material: this.objectMaterial,
+      linearDamping: 0.3,
+      angularDamping: 0.3
     });
     this.world.addBody(this.playerBody);
 
@@ -95,7 +108,10 @@ class KatamariGame {
       const body = new CANNON.Body({
         mass: size,
         shape: shape,
-        position: new CANNON.Vec3(x, size + 1, z)
+        position: new CANNON.Vec3(x, size + 1, z),
+        material: this.objectMaterial,
+        linearDamping: 0.3,
+        angularDamping: 0.3
       });
       this.world.addBody(body);
 
@@ -168,11 +184,20 @@ class KatamariGame {
   }
 
   start() {
-    const animate = () => {
+    const fixedTimeStep = 1.0 / 60.0;
+    const maxSubSteps = 3;
+    
+    let lastTime;
+    
+    const animate = (time) => {
       requestAnimationFrame(animate);
       
-      // Update physics
-      this.world.step(1/60);
+      if (lastTime !== undefined) {
+        const dt = (time - lastTime) / 1000;
+        this.world.step(fixedTimeStep, dt, maxSubSteps);
+      }
+      
+      lastTime = time;
       
       // Update visual positions
       this.scene.children.forEach(child => {
@@ -208,19 +233,7 @@ window.addEventListener('resize', () => {
   }
 });
 
-// Make sure the window is fully loaded and CANNON.js is available
+// Start the game when the page loads
 window.addEventListener('load', () => {
-  if (window.CANNON) {
-    window.game = new KatamariGame();
-  } else {
-    console.error('Please wait for CANNON.js to load...');
-    // Retry after a short delay
-    setTimeout(() => {
-      if (window.CANNON) {
-        window.game = new KatamariGame();
-      } else {
-        console.error('Failed to load CANNON.js');
-      }
-    }, 1000);
-  }
+  window.game = new KatamariGame();
 });
