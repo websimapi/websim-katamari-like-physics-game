@@ -174,8 +174,10 @@ class KatamariGame {
         const oldRadius = this.playerBody.shapes[0].radius;
         const newRadius = oldRadius + absorbedMass * 0.1;
 
-        // Update the player's sphere radius
-        this.playerBody.shapes[0].radius = newRadius;
+        // Remove old shape
+        this.playerBody.shapes = [];
+        const sphereShape = new CANNON.Sphere(newRadius);
+        this.playerBody.addShape(sphereShape);
 
         // Update mass properties
         this.playerBody.updateMassProperties();
